@@ -435,9 +435,14 @@
     <div class="finder-steps">
       <ol>
         <li>Search the business in Google Maps</li>
-        <li>Tap Share → Copy Link</li>
-        <li>Paste it above → The review link builds automatically below</li>
+        <li>Open the full listing (tap the business name/card)</li>
+        <li>Copy the address bar URL (the long one) — not the Share button</li>
+        <li>Paste it above → the review link builds instantly, every time</li>
       </ol>
+    </div>
+
+    <div class="hint" style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);">
+      In a rush and only have the short "Share → Copy Link" version? Paste it anyway — it'll try to auto-expand, but it isn't always able to. The steps above never fail.
     </div>
 
     <button type="button" class="clear-link-btn" id="clearLinkBtn">Clear Link</button>
@@ -693,7 +698,7 @@
       }
     }
 
-    urlStatus.textContent = "Couldn't auto-expand that link right now (the free lookup services may be busy). Open it once in Safari and paste the full address-bar URL instead.";
+    urlStatus.textContent = "Couldn't auto-expand this short link — that happens sometimes. Open it once in Safari, copy the full address-bar URL, and paste that instead — it always works.";
     urlStatus.className = 'key-status err';
   }
 
