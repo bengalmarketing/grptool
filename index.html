@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GRP Custom Tool</title>
+
+<!-- Add-to-Home-Screen support -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12181a">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GRP Tool">
+<style>
+  :root{
+    --ink:#12181a;
+    --panel:#182226;
+    --line:#2a3a3f;
+    --paper:#e8e4d8;
+    --brass:#c9a24b;
+    --signal:#5fb894;
+    --danger:#c9704b;
+    --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--ink);
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(95,184,148,0.06), transparent 45%),
+      radial-gradient(circle at 90% 90%, rgba(201,162,75,0.05), transparent 50%);
+    color: var(--paper);
+    font-family: var(--sans);
+    min-height:100vh;
+    padding: 28px 16px 60px;
+    padding-top: max(28px, calc(env(safe-area-inset-top) + 20px));
+  }
+  .wrap{max-width:520px;margin:0 auto;}
+
+  .eyebrow{
+    font-family: var(--mono);
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color: var(--signal);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:6px;height:6px;
+    background:var(--signal);
+    border-radius:50%;
+    box-shadow:0 0 8px var(--signal);
+  }
+  h1{
+    font-family: var(--sans);
+    font-weight:800;
+    font-size: 30px;
+    line-height:1.08;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:#9aa6a3;
+    font-size:14px;
+    line-height:1.5;
+    margin:0 0 28px;
+    max-width:44ch;
+  }
+
+  .card{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px;
+    margin-bottom:16px;
+  }
+
+  label{
+    display:block;
+    font-family: var(--mono);
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:#8fa19c;
+    margin-bottom:8px;
+  }
+
+  input[type="text"]{
+    width:100%;
+    background:#0e1517;
+    border:1px solid var(--line);
+    border-radius:9px;
+    color:var(--paper);
+    font-family:var(--mono);
+    font-size:15px;
+    padding:14px 14px;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  input[type="text"]:focus{
+    border-color: var(--signal);
+    box-shadow: 0 0 0 3px rgba(95,184,148,0.15);
+  }
+  .hint{
+    font-size:12px;
+    color:#6d7a77;
+    margin-top:8px;
+    line-height:1.5;
+  }
+  .hint a{color:var(--brass); text-decoration:none; border-bottom:1px dotted var(--brass);}
+  .hint a:hover{color:#e0bd6b;}
+
+  .result{
+    margin-top:18px;
+    display:none;
+  }
+  .result.show{display:block;}
+
+  .link-row{
+    display:flex;
+    gap:8px;
+    align-items:stretch;
+  }
+  .link-box{
+    flex:1;
+    background:#0e1517;
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:14px;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--signal);
+    word-break:break-all;
+    line-height:1.5;
+  }
+  button{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:14px;
+    border:none;
+    border-radius:9px;
+    cursor:pointer;
+    transition: transform .08s ease, background .15s ease;
+  }
+  button:active{transform: scale(0.97);}
+
+  .copy-btn{
+    background: var(--signal);
+    color:#0e1517;
+    padding:0 20px;
+    white-space:nowrap;
+    min-width:88px;
+  }
+  .copy-btn:hover{background:#72c7a4;}
+  .copy-btn.copied{background:var(--brass); color:#12181a;}
+
+  .meter{
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px dashed var(--line);
+  }
+  .meter-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#8fa19c;
+    margin-bottom:8px;
+  }
+  .meter-label .n{
+    font-size:16px;
+    color:var(--paper);
+    font-weight:700;
+    letter-spacing:0;
+    text-transform:none;
+  }
+  .meter-track{
+    height:8px;
+    background:#0e1517;
+    border-radius:5px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .meter-fill{
+    height:100%;
+    background: linear-gradient(90deg, var(--signal), #7fd4ac);
+    width:0%;
+    transition: width .3s ease, background .3s ease;
+  }
+  .meter-fill.warn{background: linear-gradient(90deg, var(--brass), #e0bd6b);}
+  .meter-fill.over{background: linear-gradient(90deg, var(--danger), #e08a5f);}
+  .meter-note{font-size:12px; color:#6d7a77; margin-top:8px;}
+  .meter-note.over{color:var(--danger);}
+
+  .actions{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+  }
+  .actions button{
+    flex:1;
+    padding:12px;
+    background:#0e1517;
+    border:1px solid var(--line);
+    color:var(--paper);
+  }
+  .actions button:hover{border-color:var(--signal); color:var(--signal);}
+
+  .footer-note{
+    font-size:12px;
+    color:#5a6663;
+    text-align:center;
+    margin-top:24px;
+    line-height:1.6;
+  }
+  .footer-note code{
+    font-family:var(--mono);
+    background:#0e1517;
+    padding:1px 5px;
+    border-radius:4px;
+    color:#8fa19c;
+  }
+
+  /* --- Finder card (launch Google's tool) --- */
+  .finder-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:14px;
+  }
+  .finder-head .tag{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--brass);
+  }
+
+  .launch-btn{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    background: var(--brass);
+    color:#12181a;
+    padding:16px;
+    font-size:15px;
+    font-weight:700;
+    text-decoration:none;
+    border-radius:9px;
+  }
+  .launch-btn:hover{background:#e0bd6b;}
+  .launch-btn:active{transform: scale(0.98);}
+  .launch-btn .arrow{
+    font-family:var(--mono);
+    font-weight:400;
+    transition: transform .15s ease;
+  }
+  .launch-btn:hover .arrow{transform: translateX(3px);}
+
+  .finder-steps{
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px dashed var(--line);
+  }
+  .finder-steps ol{
+    margin:0;
+    padding-left:20px;
+    color:#9aa6a3;
+    font-size:13px;
+    line-height:2;
+  }
+  .finder-steps li::marker{
+    font-family:var(--mono);
+    color:var(--signal);
+  }
+
+  .divider-or{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:20px 0 4px;
+    color:#5a6663;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+  }
+  .divider-or::before,.divider-or::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:var(--line);
+  }
+
+  .key-status{
+    font-size:12px;
+    margin-top:8px;
+    line-height:1.5;
+    color:#6d7a77;
+  }
+  .key-status.err{color:var(--danger);}
+  .key-status.ok{color:var(--signal);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Field Tool</div>
+  <h1>GRP Custom Tool</h1>
+  <p class="sub">Drop in a Place ID, get a direct-to-review-box link, sized to fit on an NFC card.</p>
+
+  <div class="card">
+    <div class="finder-head">
+      <label style="margin-bottom:0;">Paste a Maps link</label>
+      <span class="tag">Auto · free</span>
+    </div>
+
+    <input type="text" id="mapsUrl" placeholder="Paste a Google Maps link — short or long…" autocomplete="off" spellcheck="false">
+    <div class="key-status" id="urlStatus">
+      Search the business in Google Maps, tap Share → Copy Link (or copy the address bar URL), and paste it here — works automatically either way, free.
+    </div>
+
+    <div class="finder-steps">
+      <ol>
+        <li>Search the business in Google Maps</li>
+        <li>Tap Share → Copy Link</li>
+        <li>Paste it above — the review link builds automatically below</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="finder-head">
+      <label style="margin-bottom:0;">Find a business</label>
+      <span class="tag">Google's tool</span>
+    </div>
+
+    <a class="launch-btn" href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener">
+      Open Place ID Finder <span class="arrow">→</span>
+    </a>
+
+    <div class="finder-steps">
+      <ol>
+        <li>Search the business name or address</li>
+        <li>Copy the Place ID it shows</li>
+        <li>Come back here and paste it below</li>
+      </ol>
+    </div>
+
+    <div class="divider-or">then paste the Place ID below</div>
+  </div>
+
+  <div class="card">
+    <label for="placeId">Place ID</label>
+    <input type="text" id="placeId" placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4" autocomplete="off" spellcheck="false">
+
+    <div class="result" id="result">
+      <div class="link-row">
+        <div class="link-box" id="linkBox"></div>
+        <button class="copy-btn" id="copyBtn">Copy</button>
+      </div>
+
+      <div class="meter">
+        <div class="meter-label">
+          <span>Link size</span>
+          <span class="n" id="byteCount">0 bytes</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill" id="meterFill"></div>
+        </div>
+        <div class="meter-note" id="meterNote">Typical NFC NDEF tags hold roughly 137–888 bytes depending on chip type.</div>
+      </div>
+
+      <div class="actions">
+        <button id="openBtn">Open link</button>
+        <button id="qrBtn">Show QR</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Link format: <code>search.google.com/local/writereview?placeid=…</code> — no business login required.
+  </div>
+
+</div>
+
+<script>
+  const input = document.getElementById('placeId');
+  const result = document.getElementById('result');
+  const linkBox = document.getElementById('linkBox');
+  const copyBtn = document.getElementById('copyBtn');
+  const byteCount = document.getElementById('byteCount');
+  const meterFill = document.getElementById('meterFill');
+  const meterNote = document.getElementById('meterNote');
+  const openBtn = document.getElementById('openBtn');
+  const qrBtn = document.getElementById('qrBtn');
+
+  const NFC_TYPICAL_MAX = 888; // NTAG216 usable NDEF capacity, a common upper-range NFC card
+  let currentLink = '';
+
+  function renderLink(link){
+    currentLink = link;
+    linkBox.textContent = currentLink;
+
+    const bytes = new TextEncoder().encode(currentLink).length;
+    byteCount.textContent = bytes + ' bytes';
+
+    const pct = Math.min((bytes / NFC_TYPICAL_MAX) * 100, 100);
+    meterFill.style.width = pct + '%';
+
+    meterFill.classList.remove('warn','over');
+    meterNote.classList.remove('over');
+    if(bytes > NFC_TYPICAL_MAX){
+      meterFill.classList.add('over');
+      meterNote.classList.add('over');
+      meterNote.textContent = `${bytes} bytes may be too large for smaller NFC chips (e.g. NTAG213, ~137 bytes). Check your card's spec.`;
+    } else if (bytes > NFC_TYPICAL_MAX * 0.6){
+      meterFill.classList.add('warn');
+      meterNote.textContent = `${bytes} bytes — fits most NFC cards, but double-check smaller chips like NTAG213.`;
+    } else {
+      meterNote.textContent = `${bytes} bytes — comfortably fits standard NFC NDEF tags.`;
+    }
+
+    copyBtn.textContent = 'Copy';
+    copyBtn.classList.remove('copied');
+    result.classList.add('show');
+  }
+
+  function build(){
+    const id = input.value.trim();
+    if(!id){
+      if(!mapsUrlInput.value.trim()) result.classList.remove('show');
+      return;
+    }
+    renderLink(`https://search.google.com/local/writereview?placeid=${id}`);
+  }
+
+  input.addEventListener('input', build);
+
+  /* ---------- Free method: paste a Google Maps URL, auto-extract the location ID ---------- */
+  const mapsUrlInput = document.getElementById('mapsUrl');
+  const urlStatus = document.getElementById('urlStatus');
+  const FID_DEFAULT_MSG = 'Search the business in Google Maps (app or maps.google.com), copy the link/URL, and paste it here — the ID gets pulled out automatically, free.';
+  let expandTimer = null;
+
+  mapsUrlInput.addEventListener('input', () => {
+    const url = mapsUrlInput.value.trim();
+    clearTimeout(expandTimer);
+
+    if(!url){
+      urlStatus.textContent = FID_DEFAULT_MSG;
+      urlStatus.className = 'key-status';
+      if(!input.value.trim()) result.classList.remove('show');
+      return;
+    }
+
+    // Full URL already has what we need — extract instantly, no network needed
+    const directMatch = url.match(/!1s(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/);
+    if(directMatch){
+      renderLink(`https://www.google.com/maps/place//data=!4m3!3m2!1s${directMatch[1]}!12e1`);
+      urlStatus.textContent = 'Found it — link generated below.';
+      urlStatus.className = 'key-status ok';
+      return;
+    }
+
+    // Looks like a shortened link (maps.app.goo.gl, goo.gl/maps) — auto-expand it
+    if(/goo\.gl\//i.test(url) && url.length > 15){
+      urlStatus.textContent = 'Expanding short link…';
+      urlStatus.className = 'key-status';
+      expandTimer = setTimeout(() => expandShortLink(url), 500);
+      return;
+    }
+
+    urlStatus.textContent = "Couldn't find an ID in that link yet — paste the full URL, or a maps.app.goo.gl short link and it'll expand automatically.";
+    urlStatus.className = 'key-status err';
+  });
+
+  async function expandShortLink(shortUrl){
+    try{
+      const res = await fetch(`/api/expand?url=${encodeURIComponent(shortUrl)}`);
+      const data = await res.json();
+      const finalUrl = data && data.finalUrl ? data.finalUrl : '';
+
+      if(!finalUrl) throw new Error('no final url');
+
+      const match = finalUrl.match(/!1s(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/);
+      if(match){
+        renderLink(`https://www.google.com/maps/place//data=!4m3!3m2!1s${match[1]}!12e1`);
+        urlStatus.textContent = 'Expanded and found it — link generated below.';
+        urlStatus.className = 'key-status ok';
+      } else {
+        urlStatus.textContent = "Expanded the link, but couldn't find an ID in it. Try opening it once in Safari and copying the full address-bar URL instead.";
+        urlStatus.className = 'key-status err';
+      }
+    }catch(e){
+      urlStatus.textContent = "Couldn't auto-expand that link right now. Open it once in Safari and paste the full address-bar URL instead.";
+      urlStatus.className = 'key-status err';
+    }
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    if(!currentLink) return;
+    try{
+      await navigator.clipboard.writeText(currentLink);
+      copyBtn.textContent = 'Copied';
+      copyBtn.classList.add('copied');
+      setTimeout(()=>{ copyBtn.textContent='Copy'; copyBtn.classList.remove('copied'); }, 1600);
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = currentLink;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      copyBtn.textContent = 'Copied';
+      copyBtn.classList.add('copied');
+      setTimeout(()=>{ copyBtn.textContent='Copy'; copyBtn.classList.remove('copied'); }, 1600);
+    }
+  });
+
+  openBtn.addEventListener('click', () => {
+    if(currentLink) window.open(currentLink, '_blank');
+  });
+
+  qrBtn.addEventListener('click', () => {
+    if(!currentLink) return;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(currentLink)}`;
+    const w = window.open('', '_blank', 'width=340,height=420');
+    w.document.write(`
+      <html><head><title>QR — Google Review Link</title>
+      <style>
+        body{margin:0;background:#12181a;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;}
+        img{border-radius:12px;margin-bottom:16px;}
+        p{color:#9aa6a3;font-size:12px;max-width:240px;text-align:center;word-break:break-all;font-family:monospace;}
+      </style></head>
+      <body>
+        <img src="${qrUrl}" width="280" height="280" alt="QR code">
+        <p>${currentLink}</p>
+      </body></html>
+    `);
+  });
+
+</script>
+</body>
+</html>
