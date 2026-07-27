@@ -115,6 +115,24 @@
     border-color: var(--signal);
     box-shadow: 0 0 16px rgba(255,204,0,0.4), 0 0 0 3px rgba(255,204,0,0.15);
   }
+
+  .paste-btn{
+    width:100%;
+    background: var(--signal);
+    color:#0d0d0d;
+    border:1.5px solid var(--signal);
+    border-radius:9px;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:15px;
+    padding:14px 14px;
+    margin-top:10px;
+    box-shadow: 0 0 10px rgba(255,204,0,0.2);
+    transition: background .15s ease, box-shadow .15s ease, transform .08s ease;
+  }
+  .paste-btn:hover{background:#ffd633;}
+  .paste-btn:active{transform: scale(0.98);}
+  .paste-btn.pasted{background:#fff; }
   .hint{
     font-size:12px;
     color:#a49e8a;
@@ -391,9 +409,8 @@
     </div>
 
     <input type="text" id="mapsUrl" placeholder="Paste the Google Maps Link" autocomplete="off" spellcheck="false">
-    <div class="key-status" id="urlStatus">
-      Search the business in Google Maps, tap Share → Copy Link (or copy the address bar URL), and paste it here — works automatically either way, free.
-    </div>
+    <button type="button" class="paste-btn" id="pasteLinkBtn">Paste Link</button>
+    <div class="key-status" id="urlStatus"></div>
 
     <div class="finder-steps">
       <ol>
@@ -501,9 +518,33 @@
   /* ---------- Free method: paste a Google Maps URL, auto-extract the location ID ---------- */
   const mapsUrlInput = document.getElementById('mapsUrl');
   const urlStatus = document.getElementById('urlStatus');
-  const FID_DEFAULT_MSG = 'Search the business in Google Maps (app or maps.google.com), copy the link/URL, and paste it here — the ID gets pulled out automatically, free.';
+  const pasteLinkBtn = document.getElementById('pasteLinkBtn');
+  const FID_DEFAULT_MSG = '';
   let expandTimer = null;
   const FID_REGEX = /(?:!1s|ftid=)(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/i;
+
+  pasteLinkBtn.addEventListener('click', async () => {
+    try{
+      const text = await navigator.clipboard.readText();
+      if(!text){
+        urlStatus.textContent = 'Clipboard is empty — copy a link first.';
+        urlStatus.className = 'key-status err';
+        return;
+      }
+      mapsUrlInput.value = text.trim();
+      mapsUrlInput.dispatchEvent(new Event('input'));
+
+      pasteLinkBtn.textContent = 'Pasted';
+      pasteLinkBtn.classList.add('pasted');
+      setTimeout(() => {
+        pasteLinkBtn.textContent = 'Paste Link';
+        pasteLinkBtn.classList.remove('pasted');
+      }, 1200);
+    }catch(e){
+      urlStatus.textContent = "Couldn't read the clipboard — your phone may need permission. Try pasting into the box manually instead.";
+      urlStatus.className = 'key-status err';
+    }
+  });
 
   mapsUrlInput.addEventListener('input', () => {
     const url = mapsUrlInput.value.trim();
