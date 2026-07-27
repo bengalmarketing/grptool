@@ -649,30 +649,46 @@
     urlStatus.className = 'key-status err';
   });
 
-  async function expandShortLink(shortUrl){
-    try{
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(shortUrl)}`;
-      const res = await fetch(proxyUrl);
+  async function tryProxy(buildUrl, isJson, shortUrl){
+    const res = await fetch(buildUrl(shortUrl));
+    if(!res.ok) throw new Error('bad status');
+    if(isJson){
       const data = await res.json();
       const finalUrl = data && data.status && data.status.url ? data.status.url : '';
-      const pageContents = data && data.contents ? data.contents : '';
-
-      // Check the redirected URL first, then fall back to scanning the page's own content —
-      // Google often embeds the ID in the page even when the address bar doesn't show it.
-      const link = findLinkIn(finalUrl) || findLinkIn(pageContents);
-
-      if(link){
-        renderLink(link);
-        urlStatus.textContent = 'Expanded and found it — link generated below.';
-        urlStatus.className = 'key-status ok';
-      } else {
-        urlStatus.textContent = "Expanded the link, but couldn't find an ID in it. Try opening it once in Safari and copying the full address-bar URL instead.";
-        urlStatus.className = 'key-status err';
-      }
-    }catch(e){
-      urlStatus.textContent = "Couldn't auto-expand that link right now. Open it once in Safari and paste the full address-bar URL instead.";
-      urlStatus.className = 'key-status err';
+      const contents = data && data.contents ? data.contents : '';
+      return findLinkIn(finalUrl) || findLinkIn(contents);
+    } else {
+      const text = await res.text();
+      return findLinkIn(text);
     }
+  }
+
+  async function expandShortLink(shortUrl){
+    urlStatus.textContent = 'Expanding short link…';
+    urlStatus.className = 'key-status';
+
+    const attempts = [
+      { fn: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, json: true },
+      { fn: u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`, json: false },
+      { fn: u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, json: false }
+    ];
+
+    for(const attempt of attempts){
+      try{
+        const link = await tryProxy(attempt.fn, attempt.json, shortUrl);
+        if(link){
+          renderLink(link);
+          urlStatus.textContent = 'Expanded and found it — link generated below.';
+          urlStatus.className = 'key-status ok';
+          return;
+        }
+      }catch(e){
+        // this proxy failed or was down — silently try the next one
+      }
+    }
+
+    urlStatus.textContent = "Couldn't auto-expand that link right now (the free lookup services may be busy). Open it once in Safari and paste the full address-bar URL instead.";
+    urlStatus.className = 'key-status err';
   }
 
   copyBtn.addEventListener('click', async () => {
