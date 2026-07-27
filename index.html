@@ -650,16 +650,22 @@
   });
 
   async function tryProxy(buildUrl, isJson, shortUrl){
-    const res = await fetch(buildUrl(shortUrl));
-    if(!res.ok) throw new Error('bad status');
-    if(isJson){
-      const data = await res.json();
-      const finalUrl = data && data.status && data.status.url ? data.status.url : '';
-      const contents = data && data.contents ? data.contents : '';
-      return findLinkIn(finalUrl) || findLinkIn(contents);
-    } else {
-      const text = await res.text();
-      return findLinkIn(text);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000); // give up on a stuck proxy after 6s
+    try{
+      const res = await fetch(buildUrl(shortUrl), { signal: controller.signal });
+      if(!res.ok) throw new Error('bad status');
+      if(isJson){
+        const data = await res.json();
+        const finalUrl = data && data.status && data.status.url ? data.status.url : '';
+        const contents = data && data.contents ? data.contents : '';
+        return findLinkIn(finalUrl) || findLinkIn(contents);
+      } else {
+        const text = await res.text();
+        return findLinkIn(text);
+      }
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
