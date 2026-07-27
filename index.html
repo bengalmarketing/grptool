@@ -454,6 +454,7 @@
   const urlStatus = document.getElementById('urlStatus');
   const FID_DEFAULT_MSG = 'Search the business in Google Maps (app or maps.google.com), copy the link/URL, and paste it here — the ID gets pulled out automatically, free.';
   let expandTimer = null;
+  const FID_REGEX = /(?:!1s|ftid=)(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/i;
 
   mapsUrlInput.addEventListener('input', () => {
     const url = mapsUrlInput.value.trim();
@@ -467,7 +468,7 @@
     }
 
     // Full URL already has what we need — extract instantly, no network needed
-    const directMatch = url.match(/!1s(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/);
+    const directMatch = url.match(FID_REGEX);
     if(directMatch){
       renderLink(`https://www.google.com/maps/place//data=!4m3!3m2!1s${directMatch[1]}!12e1`);
       urlStatus.textContent = 'Found it — link generated below.';
@@ -495,7 +496,7 @@
 
       if(!finalUrl) throw new Error('no final url');
 
-      const match = finalUrl.match(/!1s(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/);
+      const match = finalUrl.match(FID_REGEX);
       if(match){
         renderLink(`https://www.google.com/maps/place//data=!4m3!3m2!1s${match[1]}!12e1`);
         urlStatus.textContent = 'Expanded and found it — link generated below.';
