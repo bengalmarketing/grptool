@@ -133,6 +133,26 @@
   .paste-btn:hover{background:#ffd633;}
   .paste-btn:active{transform: scale(0.98);}
   .paste-btn.pasted{background:#fff; }
+
+  .clear-link-btn{
+    display:none;
+    position:absolute;
+    bottom:14px;
+    right:18px;
+    background:#1a1a1a;
+    border:1px solid var(--signal);
+    color:var(--signal);
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:11px;
+    padding:5px 12px;
+    border-radius:20px;
+    cursor:pointer;
+    box-shadow: 0 0 8px rgba(255,204,0,0.3);
+    transition: background .15s ease, color .15s ease;
+  }
+  .clear-link-btn.show{display:inline-block;}
+  .clear-link-btn:hover{background:var(--signal); color:#0d0d0d;}
   .hint{
     font-size:12px;
     color:#a49e8a;
@@ -403,7 +423,7 @@
   <div class="eyebrow">Field Tool</div>
   <h1>GRP Custom Tool</h1>
 
-  <div class="card">
+  <div class="card" id="mapsCard" style="position:relative; padding-bottom:44px;">
     <div class="finder-head">
       <label style="margin-bottom:0;">Paste the maps link</label>
     </div>
@@ -419,6 +439,8 @@
         <li>Paste it above → The review link builds automatically below</li>
       </ol>
     </div>
+
+    <button type="button" class="clear-link-btn" id="clearLinkBtn">Clear Link</button>
   </div>
 
   <div class="card" id="reviewCard" style="display:none;">
@@ -524,9 +546,24 @@
   const mapsUrlInput = document.getElementById('mapsUrl');
   const urlStatus = document.getElementById('urlStatus');
   const pasteLinkBtn = document.getElementById('pasteLinkBtn');
+  const clearLinkBtn = document.getElementById('clearLinkBtn');
   const FID_DEFAULT_MSG = '';
   let expandTimer = null;
   const FID_REGEX = /(?:!1s|ftid=)(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/i;
+
+  function toggleClearBtn(){
+    if(mapsUrlInput.value.trim()){
+      clearLinkBtn.classList.add('show');
+    } else {
+      clearLinkBtn.classList.remove('show');
+    }
+  }
+
+  clearLinkBtn.addEventListener('click', () => {
+    mapsUrlInput.value = '';
+    mapsUrlInput.dispatchEvent(new Event('input'));
+    mapsUrlInput.focus();
+  });
 
   pasteLinkBtn.addEventListener('click', async () => {
     try{
@@ -554,6 +591,7 @@
   mapsUrlInput.addEventListener('input', () => {
     const url = mapsUrlInput.value.trim();
     clearTimeout(expandTimer);
+    toggleClearBtn();
 
     if(!url){
       urlStatus.textContent = FID_DEFAULT_MSG;
