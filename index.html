@@ -421,9 +421,9 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="reviewCard" style="display:none;">
     <label for="placeId">Google Review Link</label>
-    <input type="text" id="placeId" placeholder="" autocomplete="off" spellcheck="false">
+    <input type="text" id="placeId" placeholder="" autocomplete="off" spellcheck="false" style="display:none;">
 
     <div class="result" id="result">
       <div class="link-row">
@@ -472,6 +472,7 @@
   const qrOverlay = document.getElementById('qrOverlay');
   const qrBackBtn = document.getElementById('qrBackBtn');
   const qrBox = document.getElementById('qrBox');
+  const reviewCard = document.getElementById('reviewCard');
 
   const NFC_TYPICAL_MAX = 888; // NTAG216 usable NDEF capacity, a common upper-range NFC card
   let currentLink = '';
@@ -502,12 +503,16 @@
     copyBtn.textContent = 'Copy';
     copyBtn.classList.remove('copied');
     result.classList.add('show');
+    reviewCard.style.display = 'block';
   }
 
   function build(){
     const id = input.value.trim();
     if(!id){
-      if(!mapsUrlInput.value.trim()) result.classList.remove('show');
+      if(!mapsUrlInput.value.trim()){
+        result.classList.remove('show');
+        reviewCard.style.display = 'none';
+      }
       return;
     }
     renderLink(`https://search.google.com/local/writereview?placeid=${id}`);
@@ -553,7 +558,10 @@
     if(!url){
       urlStatus.textContent = FID_DEFAULT_MSG;
       urlStatus.className = 'key-status';
-      if(!input.value.trim()) result.classList.remove('show');
+      if(!input.value.trim()){
+        result.classList.remove('show');
+        reviewCard.style.display = 'none';
+      }
       return;
     }
 
