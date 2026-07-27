@@ -562,7 +562,8 @@
   clearLinkBtn.addEventListener('click', () => {
     mapsUrlInput.value = '';
     mapsUrlInput.dispatchEvent(new Event('input'));
-    mapsUrlInput.focus();
+    mapsUrlInput.blur();
+    clearLinkBtn.blur();
   });
 
   pasteLinkBtn.addEventListener('click', async () => {
