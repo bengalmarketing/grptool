@@ -13,6 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GRP Tool">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{
     --ink:#0d0d0d;
@@ -318,6 +319,64 @@
   }
   .key-status.err{color:var(--danger);}
   .key-status.ok{color:var(--signal);}
+
+  .qr-overlay{
+    position:fixed;
+    inset:0;
+    background:var(--ink);
+    z-index:1000;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    padding: 20px;
+    padding-top: max(20px, calc(env(safe-area-inset-top) + 16px));
+  }
+  .qr-overlay.show{display:flex;}
+
+  .qr-back{
+    align-self:flex-start;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:none;
+    border:none;
+    color:var(--paper);
+    font-family:var(--sans);
+    font-size:15px;
+    font-weight:600;
+    padding:10px 6px;
+    cursor:pointer;
+  }
+  .qr-back:hover{color:var(--signal);}
+  .qr-back .chev{font-size:20px; line-height:1;}
+
+  .qr-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    max-width:420px;
+  }
+  .qr-box{
+    background:#fff;
+    padding:20px;
+    border-radius:16px;
+    border:1.5px solid var(--signal);
+    box-shadow: 0 0 24px rgba(255,204,0,0.3);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:min(70vw, 320px);
+    height:min(70vw, 320px);
+    box-sizing:content-box;
+  }
+  .qr-box canvas, .qr-box img{
+    display:block;
+    max-width:100%;
+    max-height:100%;
+  }
 </style>
 </head>
 <body>
@@ -340,7 +399,7 @@
       <ol>
         <li>Search the business in Google Maps</li>
         <li>Tap Share → Copy Link</li>
-        <li>Paste it above — the review link builds automatically below</li>
+        <li>Paste it above → The review link builds automatically below</li>
       </ol>
     </div>
   </div>
@@ -376,6 +435,13 @@
 
 </div>
 
+<div class="qr-overlay" id="qrOverlay">
+  <button class="qr-back" id="qrBackBtn"><span class="chev">‹</span> Back</button>
+  <div class="qr-body">
+    <div class="qr-box" id="qrBox"></div>
+  </div>
+</div>
+
 <script>
   const input = document.getElementById('placeId');
   const result = document.getElementById('result');
@@ -386,6 +452,9 @@
   const meterNote = document.getElementById('meterNote');
   const openBtn = document.getElementById('openBtn');
   const qrBtn = document.getElementById('qrBtn');
+  const qrOverlay = document.getElementById('qrOverlay');
+  const qrBackBtn = document.getElementById('qrBackBtn');
+  const qrBox = document.getElementById('qrBox');
 
   const NFC_TYPICAL_MAX = 888; // NTAG216 usable NDEF capacity, a common upper-range NFC card
   let currentLink = '';
@@ -517,20 +586,20 @@
 
   qrBtn.addEventListener('click', () => {
     if(!currentLink) return;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(currentLink)}`;
-    const w = window.open('', '_blank', 'width=340,height=420');
-    w.document.write(`
-      <html><head><title>QR — Google Review Link</title>
-      <style>
-        body{margin:0;background:#12181a;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;}
-        img{border-radius:12px;margin-bottom:16px;}
-        p{color:#d4cfbe;font-size:12px;max-width:240px;text-align:center;word-break:break-all;font-family:monospace;}
-      </style></head>
-      <body>
-        <img src="${qrUrl}" width="280" height="280" alt="QR code">
-        <p>${currentLink}</p>
-      </body></html>
-    `);
+    qrBox.innerHTML = '';
+    new QRCode(qrBox, {
+      text: currentLink,
+      width: 280,
+      height: 280,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    qrOverlay.classList.add('show');
+  });
+
+  qrBackBtn.addEventListener('click', () => {
+    qrOverlay.classList.remove('show');
   });
 
 </script>
