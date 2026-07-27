@@ -550,6 +550,30 @@
   const FID_DEFAULT_MSG = '';
   let expandTimer = null;
   const FID_REGEX = /(?:!1s|ftid=)(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/i;
+  const FID_REGEX_LOOSE = /(0x[0-9a-fA-F]{15,16}:0x[0-9a-fA-F]{15,16})/i;
+  const PLACE_ID_REGEX = /[?&](?:query_place_id|place_id)=(Ch[A-Za-z0-9_-]{10,})/i;
+  const PLACE_ID_LOOSE = /(Ch[A-Za-z0-9_-]{20,})/;
+
+  function linkFromPlaceId(placeId){
+    return `https://search.google.com/local/writereview?placeid=${placeId}`;
+  }
+  function linkFromFid(fid){
+    return `https://www.google.com/maps/place//data=!4m3!3m2!1s${fid}!12e1`;
+  }
+
+  // Tries every known pattern against a piece of text (a URL or full page HTML)
+  function findLinkIn(text){
+    if(!text) return null;
+    let m = text.match(PLACE_ID_REGEX);
+    if(m) return linkFromPlaceId(m[1]);
+    m = text.match(PLACE_ID_LOOSE);
+    if(m) return linkFromPlaceId(m[1]);
+    m = text.match(FID_REGEX);
+    if(m) return linkFromFid(m[1]);
+    m = text.match(FID_REGEX_LOOSE);
+    if(m) return linkFromFid(m[1]);
+    return null;
+  }
 
   function toggleClearBtn(){
     if(mapsUrlInput.value.trim()){
@@ -605,9 +629,9 @@
     }
 
     // Full URL already has what we need — extract instantly, no network needed
-    const directMatch = url.match(FID_REGEX);
-    if(directMatch){
-      renderLink(`https://www.google.com/maps/place//data=!4m3!3m2!1s${directMatch[1]}!12e1`);
+    const directLink = findLinkIn(url);
+    if(directLink){
+      renderLink(directLink);
       urlStatus.textContent = 'Found it — link generated below.';
       urlStatus.className = 'key-status ok';
       return;
@@ -627,15 +651,18 @@
 
   async function expandShortLink(shortUrl){
     try{
-      const res = await fetch(`/api/expand?url=${encodeURIComponent(shortUrl)}`);
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(shortUrl)}`;
+      const res = await fetch(proxyUrl);
       const data = await res.json();
-      const finalUrl = data && data.finalUrl ? data.finalUrl : '';
+      const finalUrl = data && data.status && data.status.url ? data.status.url : '';
+      const pageContents = data && data.contents ? data.contents : '';
 
-      if(!finalUrl) throw new Error('no final url');
+      // Check the redirected URL first, then fall back to scanning the page's own content —
+      // Google often embeds the ID in the page even when the address bar doesn't show it.
+      const link = findLinkIn(finalUrl) || findLinkIn(pageContents);
 
-      const match = finalUrl.match(FID_REGEX);
-      if(match){
-        renderLink(`https://www.google.com/maps/place//data=!4m3!3m2!1s${match[1]}!12e1`);
+      if(link){
+        renderLink(link);
         urlStatus.textContent = 'Expanded and found it — link generated below.';
         urlStatus.className = 'key-status ok';
       } else {
