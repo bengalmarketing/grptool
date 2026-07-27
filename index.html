@@ -319,12 +319,10 @@
 
   <div class="eyebrow">Field Tool</div>
   <h1>GRP Custom Tool</h1>
-  <p class="sub">Drop in a Place ID, get a direct-to-review-box link, sized to fit on an NFC card.</p>
 
   <div class="card">
     <div class="finder-head">
-      <label style="margin-bottom:0;">Paste a Maps link</label>
-      <span class="tag">Auto · free</span>
+      <label style="margin-bottom:0;">Paste the maps link</label>
     </div>
 
     <input type="text" id="mapsUrl" placeholder="Paste a Google Maps link — short or long…" autocomplete="off" spellcheck="false">
@@ -342,28 +340,7 @@
   </div>
 
   <div class="card">
-    <div class="finder-head">
-      <label style="margin-bottom:0;">Find a business</label>
-      <span class="tag">Google's tool</span>
-    </div>
-
-    <a class="launch-btn" href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener">
-      Open Place ID Finder <span class="arrow">→</span>
-    </a>
-
-    <div class="finder-steps">
-      <ol>
-        <li>Search the business name or address</li>
-        <li>Copy the Place ID it shows</li>
-        <li>Come back here and paste it below</li>
-      </ol>
-    </div>
-
-    <div class="divider-or">then paste the Place ID below</div>
-  </div>
-
-  <div class="card">
-    <label for="placeId">Place ID</label>
+    <label for="placeId">Google Review Link</label>
     <input type="text" id="placeId" placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4" autocomplete="off" spellcheck="false">
 
     <div class="result" id="result">
@@ -390,9 +367,6 @@
     </div>
   </div>
 
-  <div class="footer-note">
-    Link format: <code>search.google.com/local/writereview?placeid=…</code> — no business login required.
-  </div>
 
 </div>
 
